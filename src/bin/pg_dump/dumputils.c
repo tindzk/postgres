@@ -156,8 +156,6 @@ buildACLCommands(const char *name, const char *subname, const char *nspname,
 		if (subname)
 			appendPQExpBuffer(firstsql, "(%s)", subname);
 		appendPQExpBuffer(firstsql, " ON %s ", type);
-		if (nspname && *nspname)
-			appendPQExpBuffer(firstsql, "%s.", fmtId(nspname));
 		appendPQExpBuffer(firstsql, "%s FROM PUBLIC;\n", name);
 	}
 	else
@@ -176,8 +174,6 @@ buildACLCommands(const char *name, const char *subname, const char *nspname,
 			{
 				appendPQExpBuffer(firstsql, "%sREVOKE %s ON %s ",
 								  prefix, privs->data, type);
-				if (nspname && *nspname)
-					appendPQExpBuffer(firstsql, "%s.", fmtId(nspname));
 				appendPQExpBuffer(firstsql, "%s FROM ", name);
 				if (grantee->len == 0)
 					appendPQExpBufferStr(firstsql, "PUBLIC;\n");
@@ -244,8 +240,6 @@ buildACLCommands(const char *name, const char *subname, const char *nspname,
 					if (subname)
 						appendPQExpBuffer(firstsql, "(%s)", subname);
 					appendPQExpBuffer(firstsql, " ON %s ", type);
-					if (nspname && *nspname)
-						appendPQExpBuffer(firstsql, "%s.", fmtId(nspname));
 					appendPQExpBuffer(firstsql, "%s FROM %s;\n",
 									  name, fmtId(grantee->data));
 					if (privs->len > 0)
@@ -253,8 +247,6 @@ buildACLCommands(const char *name, const char *subname, const char *nspname,
 						appendPQExpBuffer(firstsql,
 										  "%sGRANT %s ON %s ",
 										  prefix, privs->data, type);
-						if (nspname && *nspname)
-							appendPQExpBuffer(firstsql, "%s.", fmtId(nspname));
 						appendPQExpBuffer(firstsql,
 										  "%s TO %s;\n",
 										  name, fmtId(grantee->data));
@@ -264,8 +256,6 @@ buildACLCommands(const char *name, const char *subname, const char *nspname,
 						appendPQExpBuffer(firstsql,
 										  "%sGRANT %s ON %s ",
 										  prefix, privswgo->data, type);
-						if (nspname && *nspname)
-							appendPQExpBuffer(firstsql, "%s.", fmtId(nspname));
 						appendPQExpBuffer(firstsql,
 										  "%s TO %s WITH GRANT OPTION;\n",
 										  name, fmtId(grantee->data));
@@ -293,8 +283,6 @@ buildACLCommands(const char *name, const char *subname, const char *nspname,
 				{
 					appendPQExpBuffer(secondsql, "%sGRANT %s ON %s ",
 									  prefix, privs->data, type);
-					if (nspname && *nspname)
-						appendPQExpBuffer(secondsql, "%s.", fmtId(nspname));
 					appendPQExpBuffer(secondsql, "%s TO ", name);
 					if (grantee->len == 0)
 						appendPQExpBufferStr(secondsql, "PUBLIC;\n");
@@ -309,8 +297,6 @@ buildACLCommands(const char *name, const char *subname, const char *nspname,
 				{
 					appendPQExpBuffer(secondsql, "%sGRANT %s ON %s ",
 									  prefix, privswgo->data, type);
-					if (nspname && *nspname)
-						appendPQExpBuffer(secondsql, "%s.", fmtId(nspname));
 					appendPQExpBuffer(secondsql, "%s TO ", name);
 					if (grantee->len == 0)
 						appendPQExpBufferStr(secondsql, "PUBLIC");
@@ -342,8 +328,6 @@ buildACLCommands(const char *name, const char *subname, const char *nspname,
 		if (subname)
 			appendPQExpBuffer(firstsql, "(%s)", subname);
 		appendPQExpBuffer(firstsql, " ON %s ", type);
-		if (nspname && *nspname)
-			appendPQExpBuffer(firstsql, "%s.", fmtId(nspname));
 		appendPQExpBuffer(firstsql, "%s FROM %s;\n",
 						  name, fmtId(owner));
 	}
@@ -398,8 +382,6 @@ buildDefaultACLCommands(const char *type, const char *nspname,
 	 */
 	appendPQExpBuffer(prefix, "ALTER DEFAULT PRIVILEGES FOR ROLE %s ",
 					  fmtId(owner));
-	if (nspname)
-		appendPQExpBuffer(prefix, "IN SCHEMA %s ", fmtId(nspname));
 
 	if (strlen(initacls) != 0 || strlen(initracls) != 0)
 	{

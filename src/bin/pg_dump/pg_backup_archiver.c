@@ -3382,7 +3382,7 @@ _selectOutputSchema(ArchiveHandle *AH, const char *schemaName)
 	qry = createPQExpBuffer();
 
 	appendPQExpBuffer(qry, "SET search_path = %s",
-					  fmtId(schemaName));
+					  "public");
 	if (strcmp(schemaName, "pg_catalog") != 0)
 		appendPQExpBufferStr(qry, ", pg_catalog");
 
@@ -3508,8 +3508,6 @@ _getObjectDescription(PQExpBuffer buf, TocEntry *te, ArchiveHandle *AH)
 		strcmp(type, "USER MAPPING") == 0)
 	{
 		appendPQExpBuffer(buf, "%s ", type);
-		if (te->namespace && *te->namespace)
-			appendPQExpBuffer(buf, "%s.", fmtId(te->namespace));
 		appendPQExpBufferStr(buf, fmtId(te->tag));
 		return;
 	}
@@ -3650,12 +3648,7 @@ _printTocEntry(ArchiveHandle *AH, TocEntry *te, bool isData)
 	 * versions put into CREATE SCHEMA.  We have to do this when --no-owner
 	 * mode is selected.  This is ugly, but I see no other good way ...
 	 */
-	if (ropt->noOwner && strcmp(te->desc, "SCHEMA") == 0)
-	{
-		ahprintf(AH, "CREATE SCHEMA %s;\n\n\n", fmtId(te->tag));
-	}
-	else
-	{
+	if (strcmp(te->desc, "SCHEMA") != 0) {
 		if (strlen(te->defn) > 0)
 			ahprintf(AH, "%s\n\n", te->defn);
 	}

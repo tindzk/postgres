@@ -137,7 +137,7 @@ static const CatalogId nilCatalogId = {0, 0};
  * Macro for producing quoted, schema-qualified name of a dumpable object.
  */
 #define fmtQualifiedDumpable(obj) \
-	fmtQualifiedId((obj)->dobj.namespace->dobj.name, \
+	fmtQualifiedId(NULL, \
 				   (obj)->dobj.name)
 
 static void help(const char *progname);
@@ -1024,7 +1024,7 @@ setup_connection(Archive *AH, const char *dumpencoding,
 	PGconn	   *conn = GetConnection(AH);
 	const char *std_strings;
 
-	PQclear(ExecuteSqlQueryForSingleRow(AH, ALWAYS_SECURE_SEARCH_PATH_SQL));
+	PQclear(ExecuteSqlQueryForSingleRow(AH, "SELECT pg_catalog.set_config('search_path', 'public', false);"));
 
 	/*
 	 * Set the client encoding if requested.
@@ -1338,7 +1338,7 @@ expand_table_name_patterns(Archive *fout,
 		ExecuteSqlStatement(fout, "RESET search_path");
 		res = ExecuteSqlQuery(fout, query->data, PGRES_TUPLES_OK);
 		PQclear(ExecuteSqlQueryForSingleRow(fout,
-											ALWAYS_SECURE_SEARCH_PATH_SQL));
+											"SELECT pg_catalog.set_config('search_path', 'public', false);"));
 		if (strict_names && PQntuples(res) == 0)
 			exit_horribly(NULL, "no matching tables were found for pattern \"%s\"\n", cell->val);
 
@@ -3202,10 +3202,6 @@ dumpSearchPath(Archive *AH)
 			appendPQExpBufferStr(path, ", ");
 		appendPQExpBufferStr(path, fmtId(schemanames[i]));
 	}
-
-	appendPQExpBufferStr(qry, "SELECT pg_catalog.set_config('search_path', ");
-	appendStringLiteralAH(qry, path->data, AH);
-	appendPQExpBufferStr(qry, ", false);\n");
 
 	if (g_verbose)
 		write_msg(NULL, "saving search_path = %s\n", path->data);
@@ -6985,7 +6981,7 @@ getIndexes(Archive *fout, TableInfo tblinfo[], int numTables)
 							  "SELECT t.tableoid, t.oid, "
 							  "t.relname AS indexname, "
 							  "inh.inhparent AS parentidx, "
-							  "pg_catalog.pg_get_indexdef(i.indexrelid) AS indexdef, "
+							  "replace(pg_catalog.pg_get_indexdef(i.indexrelid), 'public.', '') AS indexdef, "
 							  "i.indnkeyatts AS indnkeyatts, "
 							  "i.indnatts AS indnatts, "
 							  "i.indkey, i.indisclustered, "
@@ -7030,7 +7026,7 @@ getIndexes(Archive *fout, TableInfo tblinfo[], int numTables)
 							  "SELECT t.tableoid, t.oid, "
 							  "t.relname AS indexname, "
 							  "0 AS parentidx, "
-							  "pg_catalog.pg_get_indexdef(i.indexrelid) AS indexdef, "
+							  "replace(pg_catalog.pg_get_indexdef(i.indexrelid), 'public.', '') AS indexdef, "
 							  "i.indnatts AS indnkeyatts, "
 							  "i.indnatts AS indnatts, "
 							  "i.indkey, i.indisclustered, "
@@ -7065,7 +7061,7 @@ getIndexes(Archive *fout, TableInfo tblinfo[], int numTables)
 							  "SELECT t.tableoid, t.oid, "
 							  "t.relname AS indexname, "
 							  "0 AS parentidx, "
-							  "pg_catalog.pg_get_indexdef(i.indexrelid) AS indexdef, "
+							  "replace(pg_catalog.pg_get_indexdef(i.indexrelid), 'public.', '') AS indexdef, "
 							  "i.indnatts AS indnkeyatts, "
 							  "i.indnatts AS indnatts, "
 							  "i.indkey, i.indisclustered, "
@@ -7096,7 +7092,7 @@ getIndexes(Archive *fout, TableInfo tblinfo[], int numTables)
 							  "SELECT t.tableoid, t.oid, "
 							  "t.relname AS indexname, "
 							  "0 AS parentidx, "
-							  "pg_catalog.pg_get_indexdef(i.indexrelid) AS indexdef, "
+							  "replace(pg_catalog.pg_get_indexdef(i.indexrelid), 'public.', '') AS indexdef, "
 							  "i.indnatts AS indnkeyatts, "
 							  "i.indnatts AS indnatts, "
 							  "i.indkey, i.indisclustered, "
@@ -7130,7 +7126,7 @@ getIndexes(Archive *fout, TableInfo tblinfo[], int numTables)
 							  "SELECT t.tableoid, t.oid, "
 							  "t.relname AS indexname, "
 							  "0 AS parentidx, "
-							  "pg_catalog.pg_get_indexdef(i.indexrelid) AS indexdef, "
+							  "replace(pg_catalog.pg_get_indexdef(i.indexrelid), 'public.', '') AS indexdef, "
 							  "t.relnatts AS indnkeyatts, "
 							  "t.relnatts AS indnatts, "
 							  "i.indkey, i.indisclustered, "
@@ -7689,7 +7685,7 @@ getTriggers(Archive *fout, TableInfo tblinfo[], int numTables)
 			appendPQExpBuffer(query,
 							  "SELECT t.tgname, "
 							  "t.tgfoid::pg_catalog.regproc AS tgfname, "
-							  "pg_catalog.pg_get_triggerdef(t.oid, false) AS tgdef, "
+							  "replace(pg_catalog.pg_get_triggerdef(t.oid, false), 'public.', '') AS tgdef, "
 							  "t.tgenabled, t.tableoid, t.oid, t.tgisinternal "
 							  "FROM pg_catalog.pg_trigger t "
 							  "LEFT JOIN pg_catalog.pg_trigger u ON u.oid = t.tgparentid "
@@ -7710,7 +7706,7 @@ getTriggers(Archive *fout, TableInfo tblinfo[], int numTables)
 			appendPQExpBuffer(query,
 							  "SELECT t.tgname, "
 							  "t.tgfoid::pg_catalog.regproc AS tgfname, "
-							  "pg_catalog.pg_get_triggerdef(t.oid, false) AS tgdef, "
+							  "replace(pg_catalog.pg_get_triggerdef(t.oid, false), 'public.', '') AS tgdef, "
 							  "t.tgenabled, t.tableoid, t.oid, t.tgisinternal "
 							  "FROM pg_catalog.pg_trigger t "
 							  "LEFT JOIN pg_catalog.pg_depend AS d ON "
@@ -7730,7 +7726,7 @@ getTriggers(Archive *fout, TableInfo tblinfo[], int numTables)
 			appendPQExpBuffer(query,
 							  "SELECT t.tgname, "
 							  "t.tgfoid::pg_catalog.regproc AS tgfname, "
-							  "pg_catalog.pg_get_triggerdef(t.oid, false) AS tgdef, "
+							  "replace(pg_catalog.pg_get_triggerdef(t.oid, false), 'public.', '') AS tgdef, "
 							  "t.tgenabled, false as tgisinternal, "
 							  "t.tableoid, t.oid "
 							  "FROM pg_catalog.pg_trigger t "
@@ -9735,7 +9731,7 @@ dumpComment(Archive *fout, const char *type, const char *name,
 	}
 
 	/* If a comment exists, build COMMENT ON statement */
-	if (ncomments > 0)
+	if (ncomments > 0 && strcmp(type, "SCHEMA") != 0)
 	{
 		PQExpBuffer query = createPQExpBuffer();
 		PQExpBuffer tag = createPQExpBuffer();
@@ -12133,14 +12129,12 @@ dumpFunc(Archive *fout, FuncInfo *finfo)
 	else
 		keyword = "FUNCTION";	/* works for window functions too */
 
-	appendPQExpBuffer(delqry, "DROP %s %s.%s;\n",
+	appendPQExpBuffer(delqry, "DROP %s %s;\n",
 					  keyword,
-					  fmtId(finfo->dobj.namespace->dobj.name),
 					  funcsig);
 
-	appendPQExpBuffer(q, "CREATE %s %s.%s",
+	appendPQExpBuffer(q, "CREATE %s %s",
 					  keyword,
-					  fmtId(finfo->dobj.namespace->dobj.name),
 					  funcfullsig ? funcfullsig :
 					  funcsig);
 
